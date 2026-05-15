@@ -132,18 +132,18 @@ export default function InspectorQuizzes() {
 
         <form onSubmit={handleGenerate} className="activity-form">
           <div className="form-row">
-            <label>
-              {t("subject")}
-              <select value={subject} onChange={e => {
-                setSubject(e.target.value);
-                setSelectedTeacherIds([]); // Reset selection when subject changes
-              }} required>
-                <option value="">{t("selectSubject")}</option>
-                {subjects.map(s => <option key={s.name} value={s.name}>{s.label}</option>)}
-              </select>
-            </label>
-            <label>
-              {t("title")}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BookOpen size={14} /> {t("subject")}
+                <select value={subject} onChange={e => {
+                  setSubject(e.target.value);
+                  setSelectedTeacherIds([]); // Reset selection when subject changes
+                }} required>
+                  <option value="">{t("selectSubject")}</option>
+                  {subjects.map(s => <option key={s.name} value={s.name}>{s.label}</option>)}
+                </select>
+              </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Plus size={14} /> {t("title")}
               <input
                 type="text"
                 placeholder={t("titlePlaceholder")}

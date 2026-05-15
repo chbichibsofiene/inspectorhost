@@ -90,6 +90,8 @@ public class GeminiService {
     }
 
     private Mono<String> callGemini(String prompt) {
+        log.info("Calling Gemini API. URL: {}, Key prefix: {}", baseUrl, apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) + "..." : "NULL");
+
         HttpClient httpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE);
         WebClient client = webClientBuilder
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -110,8 +112,14 @@ public class GeminiService {
                 .header("X-goog-api-key", apiKey)
                 .bodyValue(body)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), clientResponse ->
+                    clientResponse.bodyToMono(String.class).flatMap(errorBody -> {
+                        log.error("Gemini API error - Status: {}, Body: {}", clientResponse.statusCode(), errorBody);
+                        return Mono.error(new RuntimeException("Gemini API error " + clientResponse.statusCode() + ": " + errorBody));
+                    })
+                )
                 .bodyToMono(Map.class)
-                .doOnError(e -> log.error("Gemini API Call failed: {}", e.getMessage()))
+                .doOnError(e -> log.error("Gemini call failed: {}", e.getMessage()))
                 .map(response -> {
                     try {
                         List<Map> candidates = (List<Map>) response.get("candidates");
@@ -122,11 +130,28 @@ public class GeminiService {
                         Map firstCandidate = candidates.get(0);
                         Map content = (Map) firstCandidate.get("content");
                         List<Map> parts = (List<Map>) content.get("parts");
-                        String text = (String) parts.get(0).get("text");
+                        String text = "";
+                        for (Map part : parts) {
+                            if (part.containsKey("text")) {
+                                text = (String) part.get("text");
+                                break;
+                            }
+                        }
+                        
+                        log.debug("Raw Gemini response text: {}", text);
+                        
+                        // Robust JSON extraction: find the first '[' and the last ']'
+                        int firstBracket = text.indexOf('[');
+                        int lastBracket = text.lastIndexOf(']');
+                        
+                        if (firstBracket != -1 && lastBracket != -1 && lastBracket > firstBracket) {
+                            return text.substring(firstBracket, lastBracket + 1);
+                        }
+                        
                         return text.replaceAll("```json", "").replaceAll("```", "").trim();
                     } catch (Exception e) {
-                        log.error("Error parsing Gemini response: {}", response, e);
-                        throw new RuntimeException("Failed to interpret AI response");
+                        log.error("Error parsing Gemini response. Full response: {}", response, e);
+                        throw new RuntimeException("Failed to interpret AI response: " + e.getMessage());
                     }
                 });
     }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,12 +56,22 @@ public class QuizServiceImpl implements QuizService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Quiz subject must match your inspector subject");
         }
 
+        String finalLevel = schoolLevel;
+        if (finalLevel == null || finalLevel.isEmpty()) {
+            finalLevel = inspector.getSchoolLevel().name();
+        }
+        
+        String finalGrade = grade;
+        if (finalGrade == null || finalGrade.isEmpty()) {
+            finalGrade = "General";
+        }
+
         Quiz quiz = Quiz.builder()
                 .title(title)
                 .topic(topic)
                 .subject(quizSubject)
-                .schoolLevel(SchoolLevel.valueOf(schoolLevel.toUpperCase()))
-                .grade(grade)
+                .schoolLevel(SchoolLevel.valueOf(finalLevel.toUpperCase()))
+                .grade(finalGrade)
                 .inspector(inspector)
                 .build();
 
@@ -136,7 +147,13 @@ public class QuizServiceImpl implements QuizService {
         TeacherProfile teacher = teacherRepository.findByUserId(teacherUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher profile not found"));
 
+        // Find all quizzes already submitted by this teacher
+        List<Long> submittedQuizIds = submissionRepository.findByTeacherUserId(teacherUserId).stream()
+                .map(s -> s.getQuiz().getId())
+                .collect(Collectors.toList());
+
         return quizRepository.findBySubject(teacher.getSubject()).stream()
+                .filter(q -> !submittedQuizIds.contains(q.getId())) // Filter out submitted ones
                 .filter(q -> q.getAssignedTeachers() == null || q.getAssignedTeachers().isEmpty() || q.getAssignedTeachers().stream().anyMatch(t -> t.getId().equals(teacher.getId())))
                 .map(q -> mapToResponse(q, false))
                 .collect(Collectors.toList());
@@ -145,6 +162,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     @Transactional(readOnly = true)
     public List<QuizResponse> getInspectorQuizzes(Long inspectorUserId) {
+        log.info("Fetching quizzes for inspector userId: {}", inspectorUserId);
         return quizRepository.findByInspectorUserId(inspectorUserId).stream()
                 .map(q -> mapToResponse(q, true))
                 .collect(Collectors.toList());
@@ -222,29 +240,41 @@ public class QuizServiceImpl implements QuizService {
     }
 
     private QuizResponse mapToResponse(Quiz quiz, boolean includeAnswers) {
-        return QuizResponse.builder()
-                .id(quiz.getId())
-                .title(quiz.getTitle())
-                .subject(quiz.getSubject().name())
-                .topic(quiz.getTopic())
-                .schoolLevel(quiz.getSchoolLevel().name())
-                .grade(quiz.getGrade())
-                .createdAt(quiz.getCreatedAt().toString())
-                .questions(quiz.getQuestions().stream().map(q -> {
-                    List<String> options = null;
-                    if (q.getOptions() != null) {
-                        try {
-                            options = objectMapper.readValue(q.getOptions(), new TypeReference<List<String>>() {});
-                        } catch (Exception e) {}
-                    }
-                    return QuizResponse.QuestionDto.builder()
-                            .id(q.getId())
-                            .text(q.getQuestionText())
-                            .type(q.getType())
-                            .options(options)
-                            .correctAnswer(includeAnswers ? q.getCorrectAnswer() : null)
-                            .build();
-                }).collect(Collectors.toList()))
-                .build();
+        try {
+            return QuizResponse.builder()
+                    .id(quiz.getId())
+                    .title(quiz.getTitle())
+                    .subject(quiz.getSubject() != null ? quiz.getSubject().name() : "MATH")
+                    .topic(quiz.getTopic())
+                    .schoolLevel(quiz.getSchoolLevel() != null ? quiz.getSchoolLevel().name() : "SECONDARY")
+                    .grade(quiz.getGrade())
+                    .createdAt(quiz.getCreatedAt() != null ? quiz.getCreatedAt().toString() : LocalDateTime.now().toString())
+                    .questions(quiz.getQuestions() == null ? List.of() : quiz.getQuestions().stream().map(q -> {
+                        List<String> options = null;
+                        if (q.getOptions() != null && !q.getOptions().isEmpty()) {
+                            try {
+                                options = objectMapper.readValue(q.getOptions(), new TypeReference<List<String>>() {});
+                            } catch (Exception e) {
+                                log.warn("Failed to parse options for question {}: {}", q.getId(), q.getOptions());
+                            }
+                        }
+                        return QuizResponse.QuestionDto.builder()
+                                .id(q.getId())
+                                .text(q.getQuestionText())
+                                .type(q.getType())
+                                .options(options)
+                                .correctAnswer(includeAnswers ? q.getCorrectAnswer() : null)
+                                .build();
+                    }).collect(Collectors.toList()))
+                    .build();
+        } catch (Exception e) {
+            log.error("Error mapping quiz {} to response: {}", quiz.getId(), e.getMessage(), e);
+            throw e;
+        }
+    }
+    @Override
+    public com.inspector.platform.entity.InspectorProfile getInspectorProfile(Long userId) {
+        return inspectorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector profile not found"));
     }
 }

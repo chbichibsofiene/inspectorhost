@@ -188,7 +188,8 @@ public class ActivityServiceImpl implements ActivityService {
                     .map(activity -> {
                         ActivityResponse response = mapToResponse(activity);
                         // Lookup if a report exists for this specific teacher and activity
-                        activityReportRepository.findByActivityIdAndTeacherUserId(activity.getId(), userId)
+                        // Lookup if a report exists for this specific teacher and activity
+                        activityReportRepository.findTopByActivityIdAndTeacherUserIdOrderByUpdatedAtDesc(activity.getId(), userId)
                                 .ifPresent(report -> response.setPersonalReportId(report.getId()));
                         return response;
                     })
@@ -214,7 +215,7 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         ActivityResponse response = mapToResponse(activity);
-        activityReportRepository.findByActivityIdAndTeacherUserId(activityId, teacherId)
+        activityReportRepository.findTopByActivityIdAndTeacherUserIdOrderByUpdatedAtDesc(activityId, teacherId)
                 .ifPresent(report -> response.setPersonalReportId(report.getId()));
         
         return response;

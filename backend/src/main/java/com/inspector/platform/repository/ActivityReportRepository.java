@@ -14,6 +14,7 @@ public interface ActivityReportRepository extends JpaRepository<ActivityReport, 
     List<ActivityReport> findByActivityIdAndInspectorIdOrderByUpdatedAtDesc(Long activityId, Long inspectorId);
     List<ActivityReport> findByTeacherUserIdAndStatusOrderByUpdatedAtDesc(Long userId, ReportStatus status);
     java.util.Optional<ActivityReport> findByActivityIdAndTeacherUserId(Long activityId, Long teacherUserId);
+    java.util.Optional<ActivityReport> findTopByActivityIdAndTeacherUserIdOrderByUpdatedAtDesc(Long activityId, Long teacherUserId);
     void deleteByActivityId(Long activityId);
     
     @org.springframework.data.jpa.repository.Query("SELECT r.teacher.delegation.region.name as region, AVG(r.score) as avgScore, COUNT(r) as total " +

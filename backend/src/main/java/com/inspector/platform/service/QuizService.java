@@ -18,4 +18,5 @@ public interface QuizService {
     QuizResponse getQuizDetail(Long quizId);
 
     Map<String, Object> submitQuiz(Long teacherUserId, Long quizId, Map<Long, String> answers);
+    com.inspector.platform.entity.InspectorProfile getInspectorProfile(Long userId);
 }

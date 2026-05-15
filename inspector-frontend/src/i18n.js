@@ -274,7 +274,9 @@ const resources = {
       "noMessagesYet": "No messages yet",
       "download": "Download",
       "attach": "Attach",
-      "attachFile": "Attach file"
+      "attachFile": "Attach file",
+      "chooseFile": "Choose PDF",
+      "noFileSelected": "No file chosen"
     }
   },
   fr: {
@@ -548,7 +550,9 @@ const resources = {
       "noMessagesYet": "Aucun message pour l'instant",
       "download": "Télécharger",
       "attach": "Joindre",
-      "attachFile": "Joindre un fichier"
+      "attachFile": "Joindre un fichier",
+      "chooseFile": "Choisir PDF",
+      "noFileSelected": "Aucun fichier choisi"
     }
   },
   ar: {

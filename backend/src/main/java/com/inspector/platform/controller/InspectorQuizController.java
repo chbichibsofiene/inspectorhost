@@ -25,12 +25,33 @@ public class InspectorQuizController {
 
     @PostMapping("/generate")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> generateQuiz(
+            Authentication authentication,
             @RequestParam String topic,
             @RequestParam String subject,
-            @RequestParam String schoolLevel,
-            @RequestParam String grade) {
+            @RequestParam(required = false) String schoolLevel,
+            @RequestParam(required = false) String grade) {
+        
+        String finalLevel = schoolLevel;
+        String finalGrade = grade;
+        
+        if (finalLevel == null || finalLevel.isEmpty()) {
+            Long userId = extractUserId(authentication);
+            try {
+                // Try to get default level from profile
+                com.inspector.platform.entity.InspectorProfile profile = 
+                    quizService.getInspectorProfile(userId);
+                finalLevel = profile.getSchoolLevel().name();
+            } catch (Exception e) {
+                finalLevel = "SECONDARY"; // Safe default for Tunisia
+            }
+        }
+        
+        if (finalGrade == null || finalGrade.isEmpty()) {
+            finalGrade = "General";
+        }
+
         return ResponseEntity
-                .ok(ApiResponse.ok("AI questions generated", quizService.generateAIQuestions(topic, subject, schoolLevel, grade)));
+                .ok(ApiResponse.ok("AI questions generated", quizService.generateAIQuestions(topic, subject, finalLevel, finalGrade)));
     }
 
     @PostMapping

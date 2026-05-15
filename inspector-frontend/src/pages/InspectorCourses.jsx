@@ -431,7 +431,7 @@ export default function InspectorCourses() {
                       <input required value={les.title} onChange={e => updateLesson(mi, li, "title", e.target.value)}
                         placeholder={t("titlePlaceholder")} />
                     </label>
-                    <label>{t("type")}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Layers size={14} /> {t("type")}
                       <select value={les.type} onChange={e => updateLessonType(mi, li, e.target.value)}>
                         <option value="VIDEO">Video</option>
                         <option value="PDF">PDF</option>
@@ -453,18 +453,32 @@ export default function InspectorCourses() {
                           ))}
                         </select>
                       ) : les.type === 'PDF' ? (
-                        <div>
+                        <div className="premium-file-input-container" style={{ position: 'relative' }}>
+                          <div className="premium-file-input-wrapper">
+                            <div className="file-upload-btn">
+                              <Upload size={14} /> {t("chooseFile")}
+                            </div>
+                            <span className="file-name-display">
+                              {les.pdfFileName || t("noFileSelected")}
+                            </span>
+                          </div>
                           <input
                             required={!les.contentUrl}
                             type="file"
+                            className="hidden-file-input"
+                            style={{ 
+                              position: 'absolute', 
+                              top: 0, 
+                              left: 0, 
+                              width: '100%', 
+                              height: '100%', 
+                              opacity: 0, 
+                              cursor: 'pointer',
+                              zIndex: 5
+                            }}
                             accept="application/pdf"
                             onChange={e => handlePdfFile(mi, li, e.target.files?.[0])}
                           />
-                          {les.pdfFileName && (
-                            <div className="muted" style={{ fontSize: "0.8rem", marginTop: "6px" }}>
-                              {les.pdfFileName}
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <input value={les.contentUrl} onChange={e => updateLesson(mi, li, "contentUrl", e.target.value)}
@@ -478,7 +492,7 @@ export default function InspectorCourses() {
                     </label>
                   </div>
                   <div className="form-row">
-                    <label>Lesson Description
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} /> Lesson Description
                       <input value={les.description} onChange={e => updateLesson(mi, li, "description", e.target.value)}
                         placeholder="Brief explanation of the lesson content" />
                     </label>
@@ -590,18 +604,32 @@ export default function InspectorCourses() {
                               ))}
                             </select>
                           ) : les.type === 'PDF' ? (
-                            <div>
+                            <div className="premium-file-input-container" style={{ position: 'relative' }}>
+                              <div className="premium-file-input-wrapper">
+                                <div className="file-upload-btn">
+                                  <Upload size={14} /> Choose PDF
+                                </div>
+                                <span className="file-name-display">
+                                  {les.pdfFileName || "No file selected"}
+                                </span>
+                              </div>
                               <input
                                 required={!les.contentUrl}
                                 type="file"
+                                className="hidden-file-input"
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: 0, 
+                                  left: 0, 
+                                  width: '100%', 
+                                  height: '100%', 
+                                  opacity: 0, 
+                                  cursor: 'pointer',
+                                  zIndex: 5
+                                }}
                                 accept="application/pdf"
                                 onChange={e => handleNewModulePdfFile(li, e.target.files?.[0])}
                               />
-                              {les.pdfFileName && (
-                                <div className="muted" style={{ fontSize: "0.8rem", marginTop: "6px" }}>
-                                  {les.pdfFileName}
-                                </div>
-                              )}
                             </div>
                           ) : (
                             <input value={les.contentUrl} onChange={e => updateLessonInNewModule(li, "contentUrl", e.target.value)} placeholder="https://..." />
