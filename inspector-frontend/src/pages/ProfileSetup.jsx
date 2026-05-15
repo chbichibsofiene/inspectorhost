@@ -164,6 +164,24 @@ export default function ProfileSetup() {
     }
   }, [formData.delegationId, formData.delegationIds.length, user?.role]);
 
+  useEffect(() => {
+    if (user?.role !== "INSPECTOR") return;
+
+    const validDependencyIds = new Set(dependencies.map(d => d.id));
+    const validDepartmentIds = new Set(departments.map(d => d.id));
+
+    setFormData(prev => {
+      const dependencyIds = prev.dependencyIds.filter(id => validDependencyIds.has(id));
+      const departmentIds = prev.departmentIds.filter(id => validDepartmentIds.has(id));
+
+      if (dependencyIds.length === prev.dependencyIds.length && departmentIds.length === prev.departmentIds.length) {
+        return prev;
+      }
+
+      return { ...prev, dependencyIds, departmentIds };
+    });
+  }, [dependencies, departments, user?.role]);
+
   // Load Etablissements when Dependency or Level changes
   useEffect(() => {
     const ids = user?.role === "INSPECTOR" ? formData.dependencyIds : [formData.dependencyId].filter(Boolean);
@@ -186,14 +204,65 @@ export default function ProfileSetup() {
     }
   }, [formData.dependencyId, formData.dependencyIds.length, formData.schoolLevel, user?.role]);
 
+  useEffect(() => {
+    const validEtablissementIds = new Set(etablissements.map(e => e.id));
+
+    setFormData(prev => {
+      if (user?.role === "INSPECTOR") {
+        const etablissementIds = prev.etablissementIds.filter(id => validEtablissementIds.has(id));
+        return etablissementIds.length === prev.etablissementIds.length ? prev : { ...prev, etablissementIds };
+      }
+
+      if (prev.etablissementId && !validEtablissementIds.has(Number(prev.etablissementId))) {
+        return { ...prev, etablissementId: "" };
+      }
+
+      return prev;
+    });
+  }, [etablissements, user?.role]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      if (name === "delegationId") {
+        return { ...prev, delegationId: value, dependencyId: "", etablissementId: "" };
+      }
+
+      if (name === "dependencyId") {
+        return { ...prev, dependencyId: value, etablissementId: "" };
+      }
+
+      if (name === "schoolLevel") {
+        return { ...prev, schoolLevel: value, etablissementIds: [] };
+      }
+
+      return { ...prev, [name]: value };
+    });
   };
 
   const handleMultiSelect = (field, id) => {
     setFormData((prev) => {
       const exists = prev[field].includes(id);
+      const nextValue = exists ? prev[field].filter((item) => item !== id) : [...prev[field], id];
+
+      if (field === "delegationIds") {
+        return {
+          ...prev,
+          delegationIds: nextValue,
+          dependencyIds: [],
+          departmentIds: [],
+          etablissementIds: [],
+        };
+      }
+
+      if (field === "dependencyIds") {
+        return {
+          ...prev,
+          dependencyIds: nextValue,
+          etablissementIds: [],
+        };
+      }
+
       if (exists) {
         return { ...prev, [field]: prev[field].filter((item) => item !== id) };
       } else {

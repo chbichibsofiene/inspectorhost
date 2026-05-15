@@ -24,6 +24,7 @@ export const deleteReport = async (id) => {
 export const downloadReportPdf = async (reportId, filename) => {
     const response = await http.get(`/inspector/reports/${reportId}/pdf`, {
         responseType: 'blob',
+        params: { _t: Date.now() },
     });
     
     const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -58,6 +59,7 @@ const reportsApi = {
     downloadReportPdf: async (reportId, filename) => {
         const response = await http.get(`/teacher/reports/${reportId}/pdf`, {
             responseType: 'blob',
+            params: { _t: Date.now() },
         });
         
         const url = window.URL.createObjectURL(new Blob([response.data]));

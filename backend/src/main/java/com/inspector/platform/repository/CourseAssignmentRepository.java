@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface CourseAssignmentRepository extends JpaRepository<CourseAssignment, Long> {
     List<CourseAssignment> findByCourseId(Long courseId);
     List<CourseAssignment> findByTeacherId(Long teacherId);
+    long countByCourseId(Long courseId);
     Optional<CourseAssignment> findByCourseIdAndTeacherId(Long courseId, Long teacherId);
     boolean existsByCourseIdAndTeacherId(Long courseId, Long teacherId);
     void deleteByCourseIdAndTeacherId(Long courseId, Long teacherId);

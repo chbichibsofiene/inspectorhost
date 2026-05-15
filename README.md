@@ -62,7 +62,7 @@ For a deep dive into the architecture, features, and setup, please refer to the:
 - **Smart Scheduling**: Interactive calendar for activity planning.
 - **Automated Reporting**: One-click PDF generation for pedagogical reports.
 - **Real-time Notifications**: Never miss an inspection with automated reminders.
-- **Teams Integration**: Join virtual meetings directly from the dashboard.
+- **Jitsi Integration**: Join virtual meetings directly from the dashboard.
 - **KPI Analytics**: Visualize performance with Power BI integration.
 
 ---
@@ -81,7 +81,7 @@ For a deep dive into the architecture, features, and setup, please refer to the:
 - **Backend**: Spring Boot, Spring Security, JWT, JPA/Hibernate.
 - **Frontend**: React, Vite, Axios, Tailwind CSS.
 - **Database**: MySQL (Production), H2 (Development).
-- **Integrations**: Microsoft Graph API (Teams), Power BI.
+- **Integrations**: Jitsi Meet, Power BI.
 
 ---
 

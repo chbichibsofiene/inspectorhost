@@ -166,15 +166,7 @@ export default function InspectorReports() {
     setError("");
     setSuccess("");
     try {
-      const response = await downloadReportPdf(report.id);
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `activity-report-${report.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadReportPdf(report.id, report.importedPdfFileName || `activity-report-${report.id}.pdf`);
       setSuccess("PDF downloaded successfully.");
     } catch (err) {
       setError(err?.response?.data?.message || err.message || "Unable to download PDF.");

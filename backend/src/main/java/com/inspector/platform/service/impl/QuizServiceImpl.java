@@ -49,11 +49,16 @@ public class QuizServiceImpl implements QuizService {
     public QuizResponse saveQuiz(Long inspectorUserId, String title, String topic, String subject, String schoolLevel, String grade, List<Map<String, Object>> questionData, List<Long> targetTeacherIds) {
         InspectorProfile inspector = inspectorRepository.findByUserId(inspectorUserId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector profile not found"));
+        Subject quizSubject = Subject.valueOf(subject.toUpperCase());
+
+        if (quizSubject != inspector.getSubject()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Quiz subject must match your inspector subject");
+        }
 
         Quiz quiz = Quiz.builder()
                 .title(title)
                 .topic(topic)
-                .subject(Subject.valueOf(subject.toUpperCase()))
+                .subject(quizSubject)
                 .schoolLevel(SchoolLevel.valueOf(schoolLevel.toUpperCase()))
                 .grade(grade)
                 .inspector(inspector)
@@ -81,10 +86,16 @@ public class QuizServiceImpl implements QuizService {
         List<TeacherProfile> targetTeachers;
         if (targetTeacherIds != null && !targetTeacherIds.isEmpty()) {
             targetTeachers = teacherRepository.findAllById(targetTeacherIds);
+            if (targetTeachers.size() != targetTeacherIds.size()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more selected teachers do not exist");
+            }
         } else {
-            // Fallback to all matching subject teachers if none specified
-            targetTeachers = teacherRepository.findBySubject(Subject.valueOf(subject.toUpperCase()));
+            List<Long> schoolIds = inspector.getEtablissements().stream().map(Etablissement::getId).collect(Collectors.toList());
+            targetTeachers = schoolIds.isEmpty()
+                    ? List.of()
+                    : teacherRepository.findByEtablissementIdInAndSubject(schoolIds, inspector.getSubject());
         }
+        validateAssignableTeachers(inspector, targetTeachers);
         
         quiz.setAssignedTeachers(targetTeachers);
         Quiz saved = quizRepository.save(quiz);
@@ -101,6 +112,22 @@ public class QuizServiceImpl implements QuizService {
 
         logService.log(com.inspector.platform.entity.ActionType.CREATE, "Quiz", saved.getId().toString(), "Created quiz: " + title);
         return mapToResponse(saved, true);
+    }
+
+    private void validateAssignableTeachers(InspectorProfile inspector, List<TeacherProfile> teachers) {
+        List<Long> schoolIds = inspector.getEtablissements().stream()
+                .map(Etablissement::getId)
+                .collect(Collectors.toList());
+
+        boolean hasInvalidTeacher = teachers.stream().anyMatch(teacher ->
+                teacher.getSubject() != inspector.getSubject()
+                        || teacher.getEtablissement() == null
+                        || !schoolIds.contains(teacher.getEtablissement().getId()));
+
+        if (hasInvalidTeacher) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only assign teachers from your selected schools with the same subject");
+        }
     }
 
     @Override

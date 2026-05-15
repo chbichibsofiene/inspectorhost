@@ -8,7 +8,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -90,6 +92,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "courses", allEntries = true)
     public CourseResponse addModule(Long inspectorUserId, Long courseId, ModuleRequest moduleRequest) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
@@ -101,11 +104,17 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "courses", allEntries = true)
     public void assignTeacher(Long inspectorUserId, Long courseId, Long teacherUserId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
         TeacherProfile teacher = teacherProfileRepository.findByUserId(teacherUserId)
                 .orElseThrow(() -> new RuntimeException("Teacher profile not found"));
+        validateAssignableTeacher(inspectorUserId, teacher);
+
+        if (teacher.getSubject() != course.getSubject()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Teacher subject must match the course subject");
+        }
 
         if (!assignmentRepository.existsByCourseIdAndTeacherId(courseId, teacher.getId())) {
             CourseAssignment assignment = CourseAssignment.builder()
@@ -120,6 +129,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "courses", allEntries = true)
     public void unassignTeacher(Long inspectorUserId, Long courseId, Long teacherUserId) {
         TeacherProfile teacher = teacherProfileRepository.findByUserId(teacherUserId)
                 .orElseThrow(() -> new RuntimeException("Teacher profile not found"));
@@ -166,6 +176,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "courses", allEntries = true)
     public void deleteModule(Long inspectorUserId, Long courseId, Long moduleId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
@@ -270,7 +281,7 @@ public class CourseServiceImpl implements CourseService {
                 .inspectorName(c.getInspector().getFirstName() + " " + c.getInspector().getLastName())
                 .totalModules(c.getModules().size())
                 .totalLessons(totalLessons)
-                .assignedTeachers(c.getAssignments().size())
+                .assignedTeachers((int) assignmentRepository.countByCourseId(c.getId()))
                 .createdAt(c.getCreatedAt());
         if (teacherId != null) {
             long completed = progressRepository.countCompletedByTeacherAndCourse(teacherId, c.getId());
@@ -278,6 +289,20 @@ public class CourseServiceImpl implements CourseService {
             builder.completedLessons((int) completed).progressPercent(pct);
         }
         return builder.build();
+    }
+
+    private void validateAssignableTeacher(Long inspectorUserId, TeacherProfile teacher) {
+        InspectorProfile inspector = inspectorProfileRepository.findByUserId(inspectorUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector profile not found"));
+
+        boolean schoolMatch = teacher.getEtablissement() != null && inspector.getEtablissements().stream()
+                .anyMatch(e -> e.getId().equals(teacher.getEtablissement().getId()));
+        boolean subjectMatch = inspector.getSubject() == teacher.getSubject();
+
+        if (!schoolMatch || !subjectMatch) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only assign teachers from your selected schools with the same subject");
+        }
     }
 
     private CourseResponse toCourseResponseWithProgress(Course c, Long teacherId) {

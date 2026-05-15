@@ -25,6 +25,15 @@ const STATUS_COLORS = {
   ARCHIVED: "#94a3b8",
 };
 
+const emptyLesson = () => ({
+  title: "",
+  type: "VIDEO",
+  contentUrl: "",
+  description: "",
+  durationMinutes: "",
+  pdfFileName: "",
+});
+
 export default function InspectorCourses() {
   const { t } = useTranslation();
   const [courses, setCourses] = useState([]);
@@ -43,7 +52,7 @@ export default function InspectorCourses() {
   // Create form
   const [form, setForm] = useState({
     title: "", description: "", subject: "",
-    modules: [{ title: "", description: "", lessons: [{ title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] }]
+    modules: [{ title: "", description: "", lessons: [emptyLesson()] }]
   });
 
   // Add-module form
@@ -51,7 +60,7 @@ export default function InspectorCourses() {
   const [newModule, setNewModule] = useState({ 
     title: "", 
     description: "", 
-    lessons: [{ title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] 
+    lessons: [emptyLesson()] 
   });
 
   const loadCourses = useCallback(async () => {
@@ -86,6 +95,56 @@ export default function InspectorCourses() {
     } catch { setError("Failed to load progress data"); }
   };
 
+  const toLessonPayload = (lesson, orderIndex) => ({
+    title: lesson.title,
+    type: lesson.type,
+    contentUrl: lesson.contentUrl,
+    description: lesson.description,
+    durationMinutes: lesson.durationMinutes ? parseInt(lesson.durationMinutes) : null,
+    orderIndex,
+  });
+
+  const readPdfAsDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+  const updateLessonType = (mi, li, type) => {
+    updateLesson(mi, li, "type", type);
+    updateLesson(mi, li, "contentUrl", "");
+    updateLesson(mi, li, "pdfFileName", "");
+  };
+
+  const updateNewModuleLessonType = (li, type) => {
+    updateLessonInNewModule(li, "type", type);
+    updateLessonInNewModule(li, "contentUrl", "");
+    updateLessonInNewModule(li, "pdfFileName", "");
+  };
+
+  const handlePdfFile = async (mi, li, file) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setError("Only PDF files are accepted.");
+      return;
+    }
+    const dataUrl = await readPdfAsDataUrl(file);
+    updateLesson(mi, li, "contentUrl", dataUrl);
+    updateLesson(mi, li, "pdfFileName", file.name);
+  };
+
+  const handleNewModulePdfFile = async (li, file) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setError("Only PDF files are accepted.");
+      return;
+    }
+    const dataUrl = await readPdfAsDataUrl(file);
+    updateLessonInNewModule(li, "contentUrl", dataUrl);
+    updateLessonInNewModule(li, "pdfFileName", file.name);
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setLoading(true); setError(""); setSuccess("");
@@ -96,17 +155,13 @@ export default function InspectorCourses() {
         subject: form.subject,
         modules: form.modules.map((m, mi) => ({
           title: m.title, description: m.description, orderIndex: mi,
-          lessons: m.lessons.map((l, li) => ({
-            ...l,
-            durationMinutes: l.durationMinutes ? parseInt(l.durationMinutes) : null,
-            orderIndex: li
-          }))
+          lessons: m.lessons.map((l, li) => toLessonPayload(l, li))
         }))
       });
       setSuccess("Course created successfully!");
       setView("list");
       loadCourses();
-      setForm({ title: "", description: "", subject: "", modules: [{ title: "", description: "", lessons: [{ title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] }] });
+      setForm({ title: "", description: "", subject: "", modules: [{ title: "", description: "", lessons: [emptyLesson()] }] });
     } catch { setError("Failed to create course."); }
     finally { setLoading(false); }
   };
@@ -129,15 +184,11 @@ export default function InspectorCourses() {
       await addModuleToCourse(selectedCourse.id, { 
         ...newModule, 
         orderIndex: (selectedCourse.modules?.length || 0),
-        lessons: newModule.lessons.map((l, li) => ({
-          ...l,
-          durationMinutes: l.durationMinutes ? parseInt(l.durationMinutes) : null,
-          orderIndex: li
-        }))
+        lessons: newModule.lessons.map((l, li) => toLessonPayload(l, li))
       });
       setSuccess("Module added!"); setShowAddModule(false);
       openDetail(selectedCourse.id);
-      setNewModule({ title: "", description: "", lessons: [{ title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] });
+      setNewModule({ title: "", description: "", lessons: [emptyLesson()] });
     } catch { setError("Failed to add module."); }
     finally { setLoading(false); }
   };
@@ -146,16 +197,22 @@ export default function InspectorCourses() {
     try {
       await assignTeacher(courseId, teacherUserId);
       setSuccess("Teacher assigned!");
-      openDetail(courseId);
-    } catch { setError("Already assigned or error."); }
+      await openDetail(courseId);
+      await loadCourses();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Already assigned or error.");
+    }
   };
 
   const handleUnassign = async (courseId, teacherUserId) => {
     try {
       await unassignTeacher(courseId, teacherUserId);
       setSuccess("Teacher removed!");
-      openDetail(courseId);
-    } catch { setError("Error removing teacher."); }
+      await openDetail(courseId);
+      await loadCourses();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Error removing teacher.");
+    }
   };
 
   const handleDeleteCourse = async (courseId) => {
@@ -180,7 +237,7 @@ export default function InspectorCourses() {
 
   // ─── Module builder helpers ─────────────────────────────────────────────────
   const addModule = () => setForm(f => ({
-    ...f, modules: [...f.modules, { title: "", description: "", lessons: [{ title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] }]
+    ...f, modules: [...f.modules, { title: "", description: "", lessons: [emptyLesson()] }]
   }));
   const removeModule = (mi) => setForm(f => ({ ...f, modules: f.modules.filter((_, i) => i !== mi) }));
   const updateModule = (mi, field, val) => setForm(f => ({
@@ -188,7 +245,7 @@ export default function InspectorCourses() {
   }));
   const addLesson = (mi) => setForm(f => ({
     ...f, modules: f.modules.map((m, i) => i === mi
-      ? { ...m, lessons: [...m.lessons, { title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }] }
+      ? { ...m, lessons: [...m.lessons, emptyLesson()] }
       : m)
   }));
   const removeLesson = (mi, li) => setForm(f => ({
@@ -202,7 +259,7 @@ export default function InspectorCourses() {
 
   // New Module lesson helpers
   const addLessonToNewModule = () => setNewModule(m => ({
-    ...m, lessons: [...m.lessons, { title: "", type: "VIDEO", contentUrl: "", description: "", durationMinutes: "" }]
+    ...m, lessons: [...m.lessons, emptyLesson()]
   }));
   const removeLessonFromNewModule = (li) => setNewModule(m => ({
     ...m, lessons: m.lessons.filter((_, i) => i !== li)
@@ -375,7 +432,7 @@ export default function InspectorCourses() {
                         placeholder={t("titlePlaceholder")} />
                     </label>
                     <label>{t("type")}
-                      <select value={les.type} onChange={e => updateLesson(mi, li, "type", e.target.value)}>
+                      <select value={les.type} onChange={e => updateLessonType(mi, li, e.target.value)}>
                         <option value="VIDEO">Video</option>
                         <option value="PDF">PDF</option>
                         <option value="QUIZ">Quiz</option>
@@ -383,7 +440,7 @@ export default function InspectorCourses() {
                     </label>
                   </div>
                   <div className="form-row">
-                    <label>{les.type === 'QUIZ' ? t("selectQuiz") : t("contentUrl")}
+                    <label>{les.type === 'QUIZ' ? t("selectQuiz") : les.type === 'PDF' ? 'PDF file' : t("contentUrl")}
                       {les.type === 'QUIZ' ? (
                         <select 
                           required 
@@ -395,6 +452,20 @@ export default function InspectorCourses() {
                             <option key={q.id} value={`quiz:${q.id}`}>{q.title}</option>
                           ))}
                         </select>
+                      ) : les.type === 'PDF' ? (
+                        <div>
+                          <input
+                            required={!les.contentUrl}
+                            type="file"
+                            accept="application/pdf"
+                            onChange={e => handlePdfFile(mi, li, e.target.files?.[0])}
+                          />
+                          {les.pdfFileName && (
+                            <div className="muted" style={{ fontSize: "0.8rem", marginTop: "6px" }}>
+                              {les.pdfFileName}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <input value={les.contentUrl} onChange={e => updateLesson(mi, li, "contentUrl", e.target.value)}
                           placeholder="https://…" />
@@ -498,7 +569,7 @@ export default function InspectorCourses() {
                       <div className="form-row">
                         <label>Title *<input required value={les.title} onChange={e => updateLessonInNewModule(li, "title", e.target.value)} /></label>
                         <label>Type
-                          <select value={les.type} onChange={e => updateLessonInNewModule(li, "type", e.target.value)}>
+                          <select value={les.type} onChange={e => updateNewModuleLessonType(li, e.target.value)}>
                             <option value="VIDEO">Video</option>
                             <option value="PDF">PDF</option>
                             <option value="QUIZ">Quiz</option>
@@ -506,7 +577,7 @@ export default function InspectorCourses() {
                         </label>
                       </div>
                       <div className="form-row">
-                        <label>{les.type === 'QUIZ' ? 'Select Quiz' : 'Content URL'}
+                        <label>{les.type === 'QUIZ' ? 'Select Quiz' : les.type === 'PDF' ? 'PDF file' : 'Content URL'}
                           {les.type === 'QUIZ' ? (
                             <select 
                               required 
@@ -518,6 +589,20 @@ export default function InspectorCourses() {
                                 <option key={q.id} value={`quiz:${q.id}`}>{q.title}</option>
                               ))}
                             </select>
+                          ) : les.type === 'PDF' ? (
+                            <div>
+                              <input
+                                required={!les.contentUrl}
+                                type="file"
+                                accept="application/pdf"
+                                onChange={e => handleNewModulePdfFile(li, e.target.files?.[0])}
+                              />
+                              {les.pdfFileName && (
+                                <div className="muted" style={{ fontSize: "0.8rem", marginTop: "6px" }}>
+                                  {les.pdfFileName}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <input value={les.contentUrl} onChange={e => updateLessonInNewModule(li, "contentUrl", e.target.value)} placeholder="https://..." />
                           )}

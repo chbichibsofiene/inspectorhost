@@ -49,6 +49,7 @@ public class TeacherProfileServiceImpl implements TeacherProfileService {
 
         Etablissement etablissement = etablissementRepository.findById(request.getEtablissementId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid etablissement ID"));
+        validateTeacherJurisdiction(delegation, dependency, etablissement);
 
         TeacherProfile profile = TeacherProfile.builder()
                 .user(user)
@@ -96,6 +97,7 @@ public class TeacherProfileServiceImpl implements TeacherProfileService {
 
         Etablissement etablissement = etablissementRepository.findById(request.getEtablissementId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid etablissement ID"));
+        validateTeacherJurisdiction(delegation, dependency, etablissement);
 
         profile.setFirstName(request.getFirstName());
         profile.setLastName(request.getLastName());
@@ -132,5 +134,15 @@ public class TeacherProfileServiceImpl implements TeacherProfileService {
                 .language(profile.getLanguage())
                 .profileImageUrl(profile.getUser().getProfileImageUrl())
                 .build();
+    }
+
+    private void validateTeacherJurisdiction(Delegation delegation, Dependency dependency, Etablissement etablissement) {
+        if (!dependency.getDelegation().getId().equals(delegation.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selected dependency must belong to the selected delegation");
+        }
+
+        if (!etablissement.getDependency().getId().equals(dependency.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Selected school must belong to the selected dependency");
+        }
     }
 }

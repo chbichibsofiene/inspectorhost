@@ -261,15 +261,7 @@ export default function InspectorCalendar() {
     setError("");
     setSuccess("");
     try {
-      const response = await downloadReportPdf(report.id);
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `activity-report-${report.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadReportPdf(report.id, report.importedPdfFileName || `activity-report-${report.id}.pdf`);
       setSuccess("Report PDF downloaded successfully.");
     } catch (err) {
       setError(err?.response?.data?.message || err.message || "Unable to download report PDF.");
@@ -759,7 +751,7 @@ export default function InspectorCalendar() {
 
                   {teachers.length === 0 ? (
                     <p className="muted" style={{ padding: '1rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px' }}>
-                      No teachers found in your delegation.
+                      No teachers found for your selected schools and subject.
                     </p>
                   ) : (
                     <div className="teacher-selection-grid">

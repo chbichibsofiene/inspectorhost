@@ -33,7 +33,6 @@ public class PdfExportServiceImpl implements PdfExportService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found"));
         verifyAccess(userId, report, isTeacher);
 
-        logService.log(com.inspector.platform.entity.ActionType.EXPORT, "Report", reportId.toString(), "Exported report PDF: " + report.getTitle());
         return report.getImportedPdf() != null && report.getImportedPdf().length > 0
                 ? report.getImportedPdf()
                 : buildPdf(report, isTeacher);

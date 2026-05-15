@@ -5,6 +5,7 @@ import com.inspector.platform.dto.ActivityResponse;
 import com.inspector.platform.dto.EtablissementDto;
 import com.inspector.platform.dto.TeacherDto;
 import com.inspector.platform.entity.Activity;
+import com.inspector.platform.entity.Etablissement;
 import com.inspector.platform.entity.TeacherProfile;
 import com.inspector.platform.entity.User;
 import com.inspector.platform.repository.ActivityReportRepository;
@@ -52,6 +53,7 @@ public class ActivityServiceImpl implements ActivityService {
         List<TeacherProfile> guests = (request.getGuestTeacherIds() != null && !request.getGuestTeacherIds().isEmpty())
                 ? teacherProfileRepository.findAllById(request.getGuestTeacherIds())
                 : new ArrayList<>();
+        validateAssignableTeachers(inspectorId, guests);
 
         if (request.getStartDateTime().isAfter(request.getEndDateTime())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start time must be before end time");
@@ -118,6 +120,7 @@ public class ActivityServiceImpl implements ActivityService {
         List<TeacherProfile> guests = (request.getGuestTeacherIds() != null && !request.getGuestTeacherIds().isEmpty())
                 ? teacherProfileRepository.findAllById(request.getGuestTeacherIds())
                 : new ArrayList<>();
+        validateAssignableTeachers(inspectorId, guests);
 
         activity.setTitle(request.getTitle());
         activity.setDescription(request.getDescription());
@@ -219,8 +222,18 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TeacherDto> getAvailableTeachers() {
-        return teacherProfileRepository.findAll().stream()
+    public List<TeacherDto> getAvailableTeachers(Long inspectorId) {
+        var inspector = inspectorProfileRepository.findByUserId(inspectorId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector profile not found"));
+        var schoolIds = inspector.getEtablissements().stream()
+                .map(Etablissement::getId)
+                .collect(Collectors.toList());
+
+        if (schoolIds.isEmpty()) {
+            return List.of();
+        }
+
+        return teacherProfileRepository.findByEtablissementIdInAndSubject(schoolIds, inspector.getSubject()).stream()
                 .map(this::mapTeacherToDto)
                 .collect(Collectors.toList());
     }
@@ -304,6 +317,28 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         return builder.build();
+    }
+
+    private void validateAssignableTeachers(Long inspectorUserId, List<TeacherProfile> teachers) {
+        if (teachers == null || teachers.isEmpty()) {
+            return;
+        }
+
+        var inspector = inspectorProfileRepository.findByUserId(inspectorUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector profile not found"));
+        var schoolIds = inspector.getEtablissements().stream()
+                .map(Etablissement::getId)
+                .collect(Collectors.toSet());
+
+        boolean hasInvalidTeacher = teachers.stream().anyMatch(teacher ->
+                teacher.getSubject() != inspector.getSubject()
+                        || teacher.getEtablissement() == null
+                        || !schoolIds.contains(teacher.getEtablissement().getId()));
+
+        if (hasInvalidTeacher) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only assign teachers from your selected schools with the same subject");
+        }
     }
 
     private void validateActivityTimeAndDay(LocalDateTime start, LocalDateTime end) {

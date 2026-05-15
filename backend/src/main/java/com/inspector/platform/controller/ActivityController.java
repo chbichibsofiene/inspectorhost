@@ -68,8 +68,9 @@ public class ActivityController {
     }
 
     @GetMapping("/teachers")
-    public ResponseEntity<ApiResponse<List<TeacherDto>>> getAvailableTeachers() {
-        return ResponseEntity.ok(ApiResponse.ok("Available teachers retrieved successfully", activityService.getAvailableTeachers()));
+    public ResponseEntity<ApiResponse<List<TeacherDto>>> getAvailableTeachers(Authentication authentication) {
+        Long inspectorId = extractUserId(authentication);
+        return ResponseEntity.ok(ApiResponse.ok("Available teachers retrieved successfully", activityService.getAvailableTeachers(inspectorId)));
     }
 
     private Long extractUserId(Authentication authentication) {

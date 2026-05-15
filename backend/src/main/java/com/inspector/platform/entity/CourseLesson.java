@@ -23,7 +23,7 @@ public class CourseLesson {
     @Column(nullable = false, length = 20)
     private LessonType type;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String contentUrl;
 
     @Column(columnDefinition = "TEXT")
