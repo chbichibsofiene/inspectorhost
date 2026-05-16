@@ -2101,3 +2101,320 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   z-index: 2;
 }
+
+/* ============================================================
+   RESPONSIVE — TABLET  (≤ 1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  .app-shell {
+    padding: 1.5rem 1rem;
+  }
+
+  .main-content {
+    padding: 1.75rem 1.5rem;
+  }
+
+  /* Navbar: hide text labels from nav links */
+  .navbar-links .nav-item-premium span {
+    display: none;
+  }
+
+  .main-navbar-premium {
+    padding: 0.75rem 1.25rem;
+  }
+
+  /* Dashboard grids go single-column */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Admin sidebar + content */
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  /* Page header wraps */
+  .page-header {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE  (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ── Shell & spacing ── */
+  .app-shell {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .app-shell-inner {
+    max-width: 100%;
+  }
+
+  .main-content {
+    padding: 1.25rem 1rem;
+  }
+
+  /* ── Navbar ── */
+  .main-navbar-premium {
+    padding: 0.65rem 1rem;
+    gap: 0.5rem;
+  }
+
+  /* Hide full nav links on mobile — user navigates via page links */
+  .navbar-links,
+  .navbar-divider {
+    display: none;
+  }
+
+  /* Collapse user widget — show only avatar + logout */
+  .user-info-text {
+    display: none;
+  }
+
+  .user-profile-widget {
+    padding: 4px;
+    gap: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .navbar-actions-group {
+    gap: 0.5rem;
+  }
+
+  /* ── Auth pages ── */
+  .auth-page {
+    padding: 1rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  /* ── Cards ── */
+  .card {
+    padding: 1.25rem;
+    border-radius: 18px;
+  }
+
+  /* ── Dashboard grids → single column ── */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  /* Inspector / Teacher home layout */
+  .main-dashboard-content {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+
+  /* Hero section */
+  .dashboard-hero {
+    padding: 1.5rem !important;
+    border-radius: 18px !important;
+  }
+
+  .welcome-back {
+    font-size: 1.6rem !important;
+  }
+
+  .hero-content {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .hero-avatar-prominent {
+    display: none; /* Hide large avatar on mobile to save space */
+  }
+
+  .hero-tags {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* ── Activity calendar: horizontal scroll ── */
+  .timetable-days-grid {
+    grid-template-columns: repeat(7, minmax(100px, 1fr)) !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .timetable-container {
+    overflow-x: auto;
+  }
+
+  /* ── Tables: horizontal scroll ── */
+  .table-wrapper,
+  .table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  /* ── Forms ── */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-options {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button,
+  .form-actions .primary-link-button,
+  .form-actions .secondary-link-button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* ── Quick access grid (inspector home) ── */
+  .quick-access-grid {
+    gap: 0.75rem !important;
+  }
+
+  .access-card {
+    padding: 1rem !important;
+  }
+
+  /* ── Modals ── */
+  .activity-modal-content {
+    width: 95% !important;
+    padding: 1.5rem !important;
+    border-radius: 20px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* ── Admin layout ── */
+  .admin-layout-wrapper {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100% !important;
+    min-height: unset !important;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .admin-sidebar nav {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .admin-sidebar nav a span {
+    display: none; /* Icon only on mobile sidebar */
+  }
+
+  /* ── Messenger ── */
+  .messenger-layout {
+    flex-direction: column !important;
+  }
+
+  .conversations-panel {
+    width: 100% !important;
+    max-height: 40vh;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ── System Health Card metrics ── */
+  .system-health-metrics {
+    flex-direction: column !important;
+  }
+
+  /* ── Pill / tag wrapping ── */
+  .hero-tags,
+  .tags-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — SMALL MOBILE  (≤ 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .auth-card {
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
+  }
+
+  .page-title {
+    font-size: 1.3rem;
+  }
+
+  .card {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .welcome-back {
+    font-size: 1.35rem !important;
+  }
+
+  /* Timetable: show 3 days at a time on small screens */
+  .timetable-days-grid {
+    grid-template-columns: repeat(7, minmax(80px, 1fr)) !important;
+  }
+
+  /* Reduce hero padding further */
+  .dashboard-hero {
+    padding: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Button full-width in auth forms */
+  .auth-form button[type="submit"] {
+    width: 100%;
+  }
+
+  /* Notification bell dropdown */
+  .notification-dropdown {
+    right: -80px !important;
+    width: 320px !important;
+  }
+}
+
