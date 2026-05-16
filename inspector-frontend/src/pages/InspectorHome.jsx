@@ -431,7 +431,30 @@ export default function InspectorHome() {
           display: flex; align-items: center; gap: 8px; font-weight: 600;
         }
 
-        .hero-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .hero-content { display: block; width: 100%; }
+        
+        .hero-text {
+          max-width: 65% !important;
+          margin-left: 0 !important;
+        }
+        
+        .hero-avatar-prominent {
+          position: absolute !important;
+          right: -20rem !important;
+          left: auto !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          margin: 0 !important;
+          z-index: 10 !important;
+          width: 180px !important;
+          height: 180px !important;
+          transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease !important;
+        }
+        
+        .hero-avatar-prominent:hover {
+          transform: translateY(-50%) scale(1.08) rotate(5deg) !important;
+          box-shadow: 0 25px 50px rgba(0,0,0,0.25) !important;
+        }
 
         .main-dashboard-content { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
         
