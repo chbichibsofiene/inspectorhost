@@ -114,17 +114,13 @@ public class SecurityConfig {
                                      .filter(s -> !s.isEmpty())
                                      .toList();
         
-        config.setAllowedOrigins(origins);
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
-        // If wildcard is used, credentials MUST be false
-        if (origins.contains("*")) {
-            config.setAllowCredentials(false);
-        } else {
-            config.setAllowCredentials(true);
-        }
+        // When using allowedOriginPatterns, we can safely allow credentials even if "*" is provided
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
         
         source.registerCorsConfiguration("/**", config);
