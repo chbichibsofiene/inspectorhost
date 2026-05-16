@@ -77,8 +77,8 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inspector not found"));
         ActivityReport report = getReportAndVerifyOwner(inspectorId, reportId);
 
-        if (report.getStatus() == ReportStatus.FINAL && request.getStatus() == ReportStatus.DRAFT) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot revert a finalized report to draft status");
+        if (report.getStatus() == ReportStatus.FINAL) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot edit a finalized report");
         }
 
         Activity activity = getActivityAndVerifyOwner(inspectorId, request.getActivityId());
