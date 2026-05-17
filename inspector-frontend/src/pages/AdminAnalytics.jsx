@@ -111,6 +111,7 @@ export default function AdminAnalytics() {
   const [subject, setSubject] = useState("");
   const [regionId, setRegionId] = useState("");
   const [delegationId, setDelegationId] = useState("");
+  const [period, setPeriod] = useState("month");
   
   const [loading, setLoading] = useState(true);
 
@@ -146,7 +147,7 @@ export default function AdminAnalytics() {
     try {
       const [evalRes, trendRes, regRes, delRes] = await Promise.all([
         getAdminEvaluationAnalytics(subject, regionId, delegationId), 
-        getAdminTrends(subject, regionId, delegationId),
+        getAdminTrends(subject, regionId, delegationId, period),
         getRegionAnalytics(subject),
         getDelegationAnalytics(subject)
       ]);
@@ -163,7 +164,7 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     loadAllData();
-  }, [subject, regionId, delegationId]);
+  }, [subject, regionId, delegationId, period]);
 
   if (loading && !evaluationData) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
@@ -173,10 +174,13 @@ export default function AdminAnalytics() {
     </div>
   );
 
-  const trendData = trends ? Object.keys(trends.performanceEvolution).sort().map(month => ({
-    month,
-    score: trends.performanceEvolution[month],
-    inspections: trends.inspectionsPerMonth[month] || 0
+  const trendData = trends ? Array.from(new Set([
+    ...Object.keys(trends.performanceEvolution || {}),
+    ...Object.keys(trends.inspectionsPerMonth || {})
+  ])).sort().map(timeKey => ({
+    month: timeKey,
+    score: trends.performanceEvolution?.[timeKey] || 0,
+    inspections: trends.inspectionsPerMonth?.[timeKey] || 0
   })) : [];
 
   return (
@@ -317,11 +321,37 @@ export default function AdminAnalytics() {
         
         {/* Performance Evolution */}
         <section className="card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
-            <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '10px', color: '#4f46e1', border: '1px solid #e2e8f0' }}><Activity size={22} /></div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>Performance Evolution</h2>
-              <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Score trends & inspection volume over time</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '10px', color: '#4f46e1', border: '1px solid #e2e8f0' }}><Activity size={22} /></div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>Performance Evolution</h2>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Score trends & inspection volume over time</p>
+              </div>
+            </div>
+            {/* Period Selector Tabs */}
+            <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              {['week', 'month', 'year'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textTransform: 'capitalize',
+                    cursor: 'pointer',
+                    background: period === p ? 'white' : 'transparent',
+                    color: period === p ? '#4f46e1' : '#64748b',
+                    boxShadow: period === p ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
           </div>
           

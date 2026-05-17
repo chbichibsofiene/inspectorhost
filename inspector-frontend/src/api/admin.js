@@ -26,11 +26,12 @@ export const getAdminEvaluationAnalytics = (subject, regionId, delegationId) => 
   return http.get(url);
 };
 
-export const getAdminTrends = (subject, regionId, delegationId) => {
+export const getAdminTrends = (subject, regionId, delegationId, period) => {
   let url = "/admin/analytics/trends?";
   if (subject) url += `subject=${encodeURIComponent(subject)}&`;
   if (regionId && regionId !== "") url += `regionId=${regionId}&`;
   if (delegationId && delegationId !== "") url += `delegationId=${delegationId}&`;
+  if (period) url += `period=${encodeURIComponent(period)}&`;
   return http.get(url);
 };
 

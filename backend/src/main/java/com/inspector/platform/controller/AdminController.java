@@ -143,7 +143,8 @@ public class AdminController {
     public ResponseEntity<ApiResponse<TrendAnalyticsDto>> getTrends(
             @RequestParam(required = false) Subject subject,
             @RequestParam(required = false) Long regionId,
-            @RequestParam(required = false) Long delegationId) {
-        return ResponseEntity.ok(ApiResponse.ok("Trends retrieved", analyticsService.getTrends(subject, regionId, delegationId)));
+            @RequestParam(required = false) Long delegationId,
+            @RequestParam(required = false, defaultValue = "month") String period) {
+        return ResponseEntity.ok(ApiResponse.ok("Trends retrieved", analyticsService.getTrends(subject, regionId, delegationId, period)));
     }
 }

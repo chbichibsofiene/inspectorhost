@@ -64,10 +64,9 @@ public class EmailServiceImpl implements EmailService {
             "            <td align='center' style='padding: 40px; background-color: #f3f4f6; border-top: 1px solid #e5e7eb;'>" +
             "              <div style='margin-bottom: 20px;'>" +
             "                <a href='https://www.facebook.com/cnteducation/?locale=fr_FR' style='margin: 0 10px;'><img src='https://cdn-icons-png.flaticon.com/512/733/733547.png' width='24' style='opacity: 0.6;'></a>" +
-            "                <a href='#' style='margin: 0 10px;'><img src='https://cdn-icons-png.flaticon.com/512/733/733558.png' width='24' style='opacity: 0.6;'></a>" +
             "              </div>" +
             "              <div href='https://www.cnte.tn/' style='font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;'>www.cnte.tn</div>" +
-            "              <div style='font-size: 12px; color: #9ca3af; margin-bottom: 12px;'>Specialized Inspectorate Division</div>" +
+            "              <div style='font-size: 12px; color: #9ca3af; margin-bottom: 12px;'>*Pedagogy Center</div>" +
             "              <div style='font-size: 12px; color: #9ca3af;'>&copy; 2026 Pedagogy Center. All Rights Reserved.</div>" +
             "            </td>" +
             "          </tr>" +

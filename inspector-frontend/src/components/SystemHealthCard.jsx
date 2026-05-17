@@ -79,8 +79,8 @@ export default function SystemHealthCard() {
 
   useEffect(() => {
     fetchData();
-    // Poll every 60 s — no need to hammer a sleeping free-tier server
-    const interval = setInterval(() => fetchData(), 60000);
+    // Poll every 3 s for automatic real-time monitoring
+    const interval = setInterval(() => fetchData(), 3000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -128,23 +128,6 @@ export default function SystemHealthCard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Manual retry button */}
-          <button
-            onClick={() => fetchData(true)}
-            disabled={retrying}
-            title="Retry now"
-            style={{
-              background: 'none', border: '1px solid #e2e8f0', borderRadius: '10px',
-              padding: '5px 10px', cursor: retrying ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', gap: '5px',
-              color: '#64748b', fontSize: '0.75rem', fontWeight: 700,
-              opacity: retrying ? 0.5 : 1, transition: 'opacity 0.2s'
-            }}
-          >
-            <RefreshCw size={13} style={{ animation: retrying ? 'spin 1s linear infinite' : 'none' }} />
-            {retrying ? 'Checking…' : 'Retry'}
-          </button>
-
           {/* Status badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800, background: badgeBg, color: badgeColor }}>
             {isUp    ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
@@ -164,7 +147,7 @@ export default function SystemHealthCard() {
           </p>
           <p style={{ margin: 0, color: '#b45309', fontSize: '0.8rem' }}>
             The service spins down after 15 min of inactivity. It will be ready in ~30–60 s.
-            The page will auto-refresh every 60 seconds, or click <strong>Retry</strong> above.
+            Telemetry is automatically updating in real-time.
           </p>
         </div>
       ) : (

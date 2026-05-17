@@ -188,16 +188,81 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 });
     }
 
-    private long countActivities(List<Activity> activities, ActivityType type) {
-        return activities.stream()
-                .filter(activity -> activity.getType() == type)
-                .count();
+    private boolean isReportValid(ActivityReport r) {
+        try {
+            if (r == null) return false;
+            if (r.getInspector() != null) {
+                r.getInspector().getEmail();
+            }
+            if (r.getTeacher() != null) {
+                r.getTeacher().getFirstName();
+                if (r.getTeacher().getDelegation() != null) {
+                    r.getTeacher().getDelegation().getName();
+                    if (r.getTeacher().getDelegation().getRegion() != null) {
+                        r.getTeacher().getDelegation().getRegion().getName();
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isActivityValid(Activity a) {
+        try {
+            if (a == null) return false;
+            if (a.getInspector() != null) {
+                a.getInspector().getEmail();
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isTeacherProfileValid(TeacherProfile t) {
+        try {
+            if (t == null) return false;
+            t.getFirstName();
+            if (t.getDelegation() != null) {
+                t.getDelegation().getName();
+                if (t.getDelegation().getRegion() != null) {
+                    t.getDelegation().getRegion().getName();
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isInspectorProfileValid(InspectorProfile i) {
+        try {
+            if (i == null) return false;
+            i.getFirstName();
+            if (i.getDelegations() != null) {
+                i.getDelegations().forEach(d -> {
+                    if (d != null) {
+                        d.getName();
+                        if (d.getRegion() != null) {
+                            d.getRegion().getName();
+                        }
+                    }
+                });
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public AdminAnalyticsDto getAdminAnalytics(Subject subject, Long regionId, Long delegationId) {
-        List<ActivityReport> allReports = reportRepository.findAll();
+        List<ActivityReport> allReports = reportRepository.findAll().stream()
+                .filter(this::isReportValid)
+                .collect(Collectors.toList());
         
         // Filter reports
         allReports = allReports.stream()
@@ -208,12 +273,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         
         // Filter inspections count
         long totalInspections = activityRepository.findAll().stream()
+                .filter(this::isActivityValid)
                 .filter(a -> a.getType() == ActivityType.INSPECTION)
                 .filter(a -> {
                     if (subject == null && regionId == null && delegationId == null) return true;
                     
                     // Filter by inspector's profile
                     return inspectorProfileRepository.findByUserId(a.getInspector().getId())
+                            .filter(this::isInspectorProfileValid)
                             .map(p -> {
                                 boolean matchSubject = (subject == null || p.getSubject() == subject);
                                 boolean matchRegion = (regionId == null || p.getDelegations().stream().anyMatch(d -> d.getRegion().getId().equals(regionId)));
@@ -231,12 +298,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .orElse(0);
 
         long numberOfTeachers = teacherProfileRepository.findAll().stream()
+                .filter(this::isTeacherProfileValid)
                 .filter(t -> subject == null || t.getSubject() == subject)
                 .filter(t -> delegationId == null || (t.getDelegation() != null && t.getDelegation().getId().equals(delegationId)))
                 .filter(t -> regionId == null || (t.getDelegation() != null && t.getDelegation().getRegion() != null && t.getDelegation().getRegion().getId().equals(regionId)))
                 .count();
 
         long numberOfInspectors = inspectorProfileRepository.findAll().stream()
+                .filter(this::isInspectorProfileValid)
                 .filter(i -> subject == null || i.getSubject() == subject)
                 .filter(i -> delegationId == null || i.getDelegations().stream().anyMatch(d -> d.getId().equals(delegationId)))
                 .filter(i -> regionId == null || i.getDelegations().stream().anyMatch(d -> d.getRegion().getId().equals(regionId)))
@@ -302,21 +371,26 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     @Transactional(readOnly = true)
-    public TrendAnalyticsDto getTrends(Subject subject, Long regionId, Long delegationId) {
-        List<Activity> activities = activityRepository.findAll();
-        List<ActivityReport> reports = reportRepository.findAll();
+    public TrendAnalyticsDto getTrends(Subject subject, Long regionId, Long delegationId, String period) {
+        List<Activity> activities = activityRepository.findAll().stream()
+                .filter(this::isActivityValid)
+                .collect(Collectors.toList());
+        List<ActivityReport> reports = reportRepository.findAll().stream()
+                .filter(this::isReportValid)
+                .collect(Collectors.toList());
 
         activities = activities.stream()
                 .filter(a -> {
                     if (subject == null && regionId == null && delegationId == null) return true;
                     return inspectorProfileRepository.findByUserId(a.getInspector().getId())
-                            .map(p -> {
-                                boolean matchSubject = (subject == null || p.getSubject() == subject);
-                                boolean matchRegion = (regionId == null || p.getDelegations().stream().anyMatch(d -> d.getRegion().getId().equals(regionId)));
-                                boolean matchDelegation = (delegationId == null || p.getDelegations().stream().anyMatch(d -> d.getId().equals(delegationId)));
-                                return matchSubject && matchRegion && matchDelegation;
-                            })
-                            .orElse(false);
+                             .filter(this::isInspectorProfileValid)
+                             .map(p -> {
+                                 boolean matchSubject = (subject == null || p.getSubject() == subject);
+                                 boolean matchRegion = (regionId == null || p.getDelegations().stream().anyMatch(d -> d.getRegion().getId().equals(regionId)));
+                                 boolean matchDelegation = (delegationId == null || p.getDelegations().stream().anyMatch(d -> d.getId().equals(delegationId)));
+                                 return matchSubject && matchRegion && matchDelegation;
+                             })
+                             .orElse(false);
                 })
                 .collect(Collectors.toList());
 
@@ -326,17 +400,25 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .filter(r -> regionId == null || (r.getTeacher() != null && r.getTeacher().getDelegation() != null && r.getTeacher().getDelegation().getRegion() != null && r.getTeacher().getDelegation().getRegion().getId().equals(regionId)))
                 .collect(Collectors.toList());
 
+        String pattern = "yyyy-MM"; // default
+        if ("year".equalsIgnoreCase(period)) {
+            pattern = "yyyy";
+        } else if ("week".equalsIgnoreCase(period)) {
+            pattern = "yyyy-'W'ww";
+        }
+        final String finalPattern = pattern;
+
         Map<String, Long> inspectionsPerMonth = activities.stream()
                 .filter(a -> a.getType() == ActivityType.INSPECTION && a.getStartDateTime() != null)
                 .collect(Collectors.groupingBy(
-                        a -> a.getStartDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                        a -> a.getStartDateTime().format(DateTimeFormatter.ofPattern(finalPattern)),
                         Collectors.counting()
                 ));
 
         Map<String, Double> performanceEvolution = reports.stream()
                 .filter(r -> r.getScore() != null && r.getUpdatedAt() != null)
                 .collect(Collectors.groupingBy(
-                        r -> r.getUpdatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                        r -> r.getUpdatedAt().format(DateTimeFormatter.ofPattern(finalPattern)),
                         Collectors.averagingDouble(ActivityReport::getScore)
                 ));
         
@@ -346,6 +428,12 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .inspectionsPerMonth(inspectionsPerMonth)
                 .performanceEvolution(performanceEvolution)
                 .build();
+    }
+
+    private long countActivities(List<Activity> activities, ActivityType type) {
+        return activities.stream()
+                .filter(activity -> activity.getType() == type)
+                .count();
     }
 
     private long countReports(List<ActivityReport> reports, ReportStatus status) {

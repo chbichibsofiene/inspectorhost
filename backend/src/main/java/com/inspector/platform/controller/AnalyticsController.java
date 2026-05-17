@@ -53,8 +53,9 @@ public class AnalyticsController {
     public ResponseEntity<ApiResponse<TrendAnalyticsDto>> getTrends(
             @RequestParam(required = false) Subject subject,
             @RequestParam(required = false) Long regionId,
-            @RequestParam(required = false) Long delegationId) {
-        return ResponseEntity.ok(ApiResponse.ok("Trends retrieved successfully", analyticsService.getTrends(subject, regionId, delegationId)));
+            @RequestParam(required = false) Long delegationId,
+            @RequestParam(required = false, defaultValue = "month") String period) {
+        return ResponseEntity.ok(ApiResponse.ok("Trends retrieved successfully", analyticsService.getTrends(subject, regionId, delegationId, period)));
     }
 
     private Long extractUserId(Authentication authentication) {
