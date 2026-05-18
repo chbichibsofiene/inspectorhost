@@ -16,7 +16,7 @@ export default function Login() {
   const handleLogoClick = () => {
     const newClicks = logoClicks + 1;
     setLogoClicks(newClicks);
-    if (newClicks >= 2) {
+    if (newClicks >= 1) {
       setShowEasterEgg(true);
       setLogoClicks(0);
     }
